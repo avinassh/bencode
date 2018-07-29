@@ -43,7 +43,21 @@ func extract(encoded string) (*BenStruct, error) {
 	buffer := string(encoded[1 : len(encoded)-1])
 
 	if isBenString(encoded) {
-		return NewBenString(encoded)
+		length, err := getLength(encoded)
+		if err != nil {
+			return nil, err
+		}
+
+		if length == 0 {
+			return &BenStruct{
+				StringValue: "",
+				Raw:         "0:",
+			}, nil
+		}
+		return &BenStruct{
+			StringValue: encoded[:length],
+			Raw:         fmt.Sprintf("%d:%s", length, encoded[:length]),
+		}, nil
 	}
 
 	if !isValidEndDelimeter(lastChar) {
