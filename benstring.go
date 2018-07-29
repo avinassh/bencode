@@ -14,7 +14,7 @@ type BenString struct {
 }
 
 // pass either of one. encoded takes the precedence
-func NewBenString(encoded string) (*BenString, error) {
+func NewBenString(encoded string) (*BenStruct, error) {
 	logger := log.WithField("method", "NewBenString")
 	if encoded == "" {
 		logger.Error("received empty encoded string")
@@ -27,9 +27,9 @@ func NewBenString(encoded string) (*BenString, error) {
 
 	if len(values) == 1 {
 		if values[0] == "0" {
-			return &BenString{
-				Value: "",
-				Raw:   encoded, // which is "0:"
+			return &BenStruct{
+				Raw:         encoded, // which is "0:"
+				StringValue: "",
 			}, nil
 		} else {
 			logger.Error("invalid bencoded string")
@@ -50,10 +50,10 @@ func NewBenString(encoded string) (*BenString, error) {
 		return nil, ErrInvalidBenString
 	}
 
-	return &BenString{Raw: encoded, Value: values[1]}, nil
+	return &BenStruct{Raw: encoded, StringValue: values[1]}, nil
 }
 
-func NewBenStringFromValue(decoded string) (*BenString, error) {
-	return &BenString{
-		Raw: fmt.Sprintf("%d:%s", len(decoded), decoded), Value: decoded}, nil
+func NewBenStringFromValue(decoded string) (*BenStruct, error) {
+	return &BenStruct{
+		Raw: fmt.Sprintf("%d:%s", len(decoded), decoded), StringValue: decoded}, nil
 }
