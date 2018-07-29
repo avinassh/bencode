@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
-	"strings"
 )
 
 func NewBencoder(encoded string) *Bencoder {
@@ -170,7 +170,33 @@ func (b *Bencoder) extractInt() *BenStruct {
 }
 
 func (b *Bencoder) extractList() *BenStruct {
-	return nil
+	// current cursor is at `l`, so read till e
+	// we move one character and start reading
+
+	// lets keep track of start and end cursors so that
+	// we can build the raw string easily
+	startCursor := b.cursor
+
+	// lets move the cursor by 1
+
+	b.increment()
+	result := []BenStruct{}
+
+	for {
+		currentChar := b.currentChar()
+		if currentChar == "e" {
+			break
+		}
+
+		item := b.encode()
+		result = append(result, *item)
+	}
+
+	// currently we are at `e`, so lets move ahead
+	b.increment()
+	endCursor := b.cursor
+
+	return &BenStruct{DataType: ListType, ListValue: result, Raw: b.rawString[startCursor:endCursor]}
 }
 
 func (b *Bencoder) extractDict() *BenStruct {
