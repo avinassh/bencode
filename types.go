@@ -17,3 +17,9 @@ type BenStruct struct {
 	StringValue string
 	Raw         string
 }
+
+type Bencoder struct {
+	raw       []byte
+	rawString string
+	cursor    int // gives the current position
+}
