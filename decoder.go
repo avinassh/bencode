@@ -147,12 +147,12 @@ func (b *Bencoder) extractInt() *BenStruct {
 
 	// lets validate
 	// case of `0<any number>`
-	if len(value) > 1 && string(value[0]) == "0" {
+	if len(value) > 1 && strings.HasPrefix(valueString, "0") {
 		logger.Error("integer cannot start with 0")
 		return nil
 	}
 	// case of `-0` or `-0<anything>`
-	if len(value) > 1 && (string(value[:2]) == "-0") {
+	if len(value) > 1 && strings.HasPrefix(valueString, "-0") {
 		logger.Error("integer cannot have -0")
 		return nil
 	}
