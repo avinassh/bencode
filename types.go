@@ -1,5 +1,7 @@
 package main
 
+import "encoding/json"
+
 type DataType int
 
 const (
@@ -16,6 +18,7 @@ type BenStruct struct {
 	ListValue   []BenStruct
 	StringValue string
 	Raw         string
+	JsonValue   json.RawMessage
 }
 
 type Bencoder struct {
