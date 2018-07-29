@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -110,11 +111,12 @@ func (b *Bencoder) extractString() *BenStruct {
 	}
 
 	// lets read the next `size` bytes
-	value := string(b.raw[b.cursor : b.cursor+size])
+	valueBytes := b.raw[b.cursor : b.cursor+size]
+	value := string(valueBytes)
 
 	// and move the cursor by size
 	b.incrementBy(size)
-	return &BenStruct{StringValue: value, Raw: fmt.Sprintf("%d:%s", size, value)}
+	return &BenStruct{StringValue: value, JsonValue: valueBytes, Raw: fmt.Sprintf("%d:%s", size, value)}
 }
 
 // we extract the integer value
@@ -166,7 +168,7 @@ func (b *Bencoder) extractInt() *BenStruct {
 		logger.WithError(err).Error("failed to parse the int")
 		return nil
 	}
-	return &BenStruct{DataType: IntType, IntValue: intValue, Raw: fmt.Sprintf("i%de", intValue)}
+	return &BenStruct{DataType: IntType, IntValue: intValue, JsonValue: buf.Bytes(), Raw: fmt.Sprintf("i%de", intValue)}
 }
 
 func (b *Bencoder) extractList() *BenStruct {
