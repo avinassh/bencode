@@ -35,7 +35,7 @@ func (b *Bencoder) encode() *BenStruct {
 	case "l":
 		return b.extractList()
 	case "d":
-		return b.extractDict()
+		return b.extractMap()
 	default:
 		return nil
 	}
@@ -199,7 +199,7 @@ func (b *Bencoder) extractList() *BenStruct {
 	return &BenStruct{DataType: ListType, ListValue: result, Raw: b.rawString[startCursor:endCursor]}
 }
 
-func (b *Bencoder) extractDict() *BenStruct {
+func (b *Bencoder) extractMap() *BenStruct {
 	// current cursor is at `d`, so read till e
 	// we move one character and start reading
 
