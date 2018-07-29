@@ -8,11 +8,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type BenString struct {
-	Raw   string
-	Value string
-}
-
 // pass either of one. encoded takes the precedence
 func NewBenString(encoded string) (*BenStruct, error) {
 	logger := log.WithField("method", "NewBenString")
