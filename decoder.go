@@ -200,5 +200,33 @@ func (b *Bencoder) extractList() *BenStruct {
 }
 
 func (b *Bencoder) extractDict() *BenStruct {
-	return nil
+	// current cursor is at `d`, so read till e
+	// we move one character and start reading
+
+	// lets keep track of start and end cursors so that
+	// we can build the raw string easily
+	startCursor := b.cursor
+
+	// lets move the cursor by 1
+
+	b.increment()
+	result := map[string]BenStruct{}
+
+	for {
+		currentChar := b.currentChar()
+		if currentChar == "e" {
+			break
+		}
+
+		key := b.extractString()
+		value := b.encode()
+		result[key.StringValue] = *value
+	}
+
+	// currently we are at `e`, so lets move ahead
+	b.increment()
+	endCursor := b.cursor
+
+	return &BenStruct{DataType: MapType, MapValue: result, Raw: b.rawString[startCursor:endCursor]}
+
 }
