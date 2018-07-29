@@ -2,11 +2,65 @@ package main
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
+
+var RegExpr = regexp.MustCompile("^(\\d+):.*")
+
+func isValidEndDelimeter(lastChar string) bool {
+	if lastChar == "e" {
+		return true
+	}
+	return false
+}
+
+func isBenString(encoded string) bool {
+	return RegExpr.MatchString(encoded)
+}
+
+func getLength(encoded string) (uint64, error) {
+	match := RegExpr.FindStringSubmatch(encoded)
+	if len(match) == 0 || len(match) != 2 {
+		return 0, ErrInvalidBenString
+	}
+	stringLength, err := strconv.ParseUint(match[1], 10, 0)
+	if err != nil {
+		return 0, err
+	}
+	return stringLength, nil
+
+}
+
+func extract(encoded string) (*BenStruct, error) {
+	response := &BenStruct{}
+
+	firstChar := string(encoded[0])
+	lastChar := string(encoded[len(encoded)-1])
+	buffer := string(encoded[1 : len(encoded)-1])
+
+	if isBenString(encoded) {
+		return NewBenString(encoded)
+	}
+
+	if !isValidEndDelimeter(lastChar) {
+		return nil, ErrInvalidBenString
+	}
+
+	switch firstChar {
+	case "d":
+		return extract(buffer)
+	case "i":
+		return extract(buffer)
+	case "l":
+		return extract(buffer)
+	}
+
+	return response, nil
+}
 
 // pass either of one. encoded takes the precedence
 func NewBenString(encoded string) (*BenStruct, error) {
