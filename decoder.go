@@ -220,9 +220,12 @@ func (b *Bencoder) extractMap() *BenStruct {
 	startCursor := b.cursor
 
 	// lets move the cursor by 1
-
 	b.increment()
+
 	result := map[string]BenStruct{}
+
+	// following is for json
+	jsonResult := map[string]json.RawMessage{}
 
 	for {
 		currentChar := b.currentChar()
@@ -233,12 +236,18 @@ func (b *Bencoder) extractMap() *BenStruct {
 		key := b.extractString()
 		value := b.encode()
 		result[key.StringValue] = *value
+		jsonResult[key.StringValue] = value.JsonValue
 	}
 
 	// currently we are at `e`, so lets move ahead
 	b.increment()
 	endCursor := b.cursor
 
-	return &BenStruct{DataType: MapType, MapValue: result, Raw: b.rawString[startCursor:endCursor]}
+	jsonValue, err := json.Marshal(&jsonResult)
+	if err != nil {
+		log.WithField("method", "extractMap").WithError(err).Error("failed to marshal the jsonmap")
+	}
+
+	return &BenStruct{DataType: MapType, MapValue: result, JsonValue: jsonValue, Raw: b.rawString[startCursor:endCursor]}
 
 }
