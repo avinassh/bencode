@@ -198,7 +198,17 @@ func (b *Bencoder) extractList() *BenStruct {
 	b.increment()
 	endCursor := b.cursor
 
-	return &BenStruct{DataType: ListType, ListValue: result, Raw: b.rawString[startCursor:endCursor]}
+	// lets construct jsonvalue too
+	jsonResults := []json.RawMessage{}
+	for _, bs := range result {
+		jsonResults = append(jsonResults, bs.JsonValue)
+	}
+	jsonValue, err := json.Marshal(&jsonResults)
+	if err != nil {
+		log.WithField("method", "extractList").WithError(err).Error("failed to marshal the jsonlist")
+	}
+
+	return &BenStruct{DataType: ListType, ListValue: result, JsonValue: jsonValue, Raw: b.rawString[startCursor:endCursor]}
 }
 
 func (b *Bencoder) extractMap() *BenStruct {
