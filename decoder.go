@@ -116,7 +116,7 @@ func (b *Bencoder) extractString() *BenStruct {
 
 	// and move the cursor by size
 	b.incrementBy(size)
-	return &BenStruct{StringValue: value, JsonValue: valueBytes, Raw: fmt.Sprintf("%d:%s", size, value)}
+	return &BenStruct{StringValue: value, JsonValue: jsonMustMarshal(&value), Raw: fmt.Sprintf("%d:%s", size, value)}
 }
 
 // we extract the integer value
@@ -168,7 +168,7 @@ func (b *Bencoder) extractInt() *BenStruct {
 		logger.WithError(err).Error("failed to parse the int")
 		return nil
 	}
-	return &BenStruct{DataType: IntType, IntValue: intValue, JsonValue: buf.Bytes(), Raw: fmt.Sprintf("i%de", intValue)}
+	return &BenStruct{DataType: IntType, IntValue: intValue, JsonValue: jsonMustMarshal(&intValue), Raw: fmt.Sprintf("i%de", intValue)}
 }
 
 func (b *Bencoder) extractList() *BenStruct {
