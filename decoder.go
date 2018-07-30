@@ -249,5 +249,4 @@ func (b *Bencoder) extractMap() *BenStruct {
 	}
 
 	return &BenStruct{DataType: MapType, MapValue: result, JsonValue: jsonValue, Raw: b.rawString[startCursor:endCursor]}
-
 }
