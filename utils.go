@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"strconv"
 )
 
@@ -9,4 +10,10 @@ func isDigit(char string) bool {
 		return true
 	}
 	return false
+}
+
+// always send a pointer
+func jsonMustMarshal(v interface{}) []byte {
+	resp, _ := json.Marshal(v)
+	return resp
 }
