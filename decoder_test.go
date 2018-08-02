@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestDecoder(t *testing.T) {
+func TestDecoderJSONTests(t *testing.T) {
 
 	type testCase struct {
 		input    string
@@ -40,7 +40,6 @@ func TestDecoder(t *testing.T) {
 	}
 
 	for _, test := range tests {
-
 		enc := NewBencoder(test.input)
 		value := enc.Parse()
 		got := string(value.JsonValue)
