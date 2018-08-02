@@ -41,7 +41,7 @@ func TestDecoderJSONTests(t *testing.T) {
 
 	for _, test := range tests {
 		enc := NewBencoder(test.input)
-		value := enc.Parse()
+		value, _ := enc.Parse()
 		got := string(value.JsonValue)
 
 		if got != test.expected {

@@ -18,11 +18,11 @@ func NewBencoder(encoded string) *Bencoder {
 	}
 }
 
-func (b *Bencoder) Parse() *BenStruct {
+func (b *Bencoder) Parse() (*BenStruct, error) {
 	return b.encode()
 }
 
-func (b *Bencoder) encode() *BenStruct {
+func (b *Bencoder) encode() (*BenStruct, error) {
 
 	currentChar := b.currentChar()
 
@@ -38,9 +38,9 @@ func (b *Bencoder) encode() *BenStruct {
 	case "d":
 		return b.extractMap()
 	default:
-		return nil
+		return nil, ErrInvalidBenString
 	}
-	return nil
+	return nil, ErrInvalidBenString
 }
 
 func (b *Bencoder) currentChar() string {
@@ -65,7 +65,7 @@ func (b *Bencoder) incrementBy(offset int) {
 // and we don't know how much bytes `size` itself may
 // take. it could be `23` or `56565575756`. So we gotta
 // read till we encounter `:`. Using a regex would be easy.
-func (b *Bencoder) extractString() *BenStruct {
+func (b *Bencoder) extractString() (*BenStruct, error) {
 	// current character is some digit, so we can just start
 	// reading the bytes
 	var buf bytes.Buffer
@@ -85,13 +85,13 @@ func (b *Bencoder) extractString() *BenStruct {
 
 	if strings.HasPrefix(sizeString, "-") {
 		logger.Error("Size cannot be -ve")
-		return nil
+		return nil, ErrSizeString
 	}
 
 	size, err := strconv.Atoi(sizeString)
 	if err != nil {
 		logger.WithError(err).Error("failed to parse the size int")
-		return nil
+		return nil, ErrSizeString
 	}
 
 	// currently we are at `:`. So lets move the current cursor to next
@@ -99,7 +99,7 @@ func (b *Bencoder) extractString() *BenStruct {
 
 	// if size is 0, we just move on
 	if size == 0 {
-		return &BenStruct{Raw: "0:"}
+		return &BenStruct{Raw: "0:"}, nil
 
 	}
 
@@ -107,7 +107,7 @@ func (b *Bencoder) extractString() *BenStruct {
 	// we need to check, does it even have those bytes?
 	if len(b.raw[b.cursor:]) < size {
 		logger.Error("not enough bytes to read")
-		return nil
+		return nil, ErrBytesMissing
 	}
 
 	// lets read the next `size` bytes
@@ -116,7 +116,7 @@ func (b *Bencoder) extractString() *BenStruct {
 
 	// and move the cursor by size
 	b.incrementBy(size)
-	return &BenStruct{StringValue: value, JsonValue: jsonMustMarshal(&value), Raw: fmt.Sprintf("%d:%s", size, value)}
+	return &BenStruct{StringValue: value, JsonValue: jsonMustMarshal(&value), Raw: fmt.Sprintf("%d:%s", size, value)}, nil
 }
 
 // we extract the integer value
@@ -126,7 +126,7 @@ func (b *Bencoder) extractString() *BenStruct {
 // e.g. "i3e" is 3, "i3e" is -3, "i0e" is zero
 //
 // and "i03e", "i-0e" are invalid
-func (b *Bencoder) extractInt() *BenStruct {
+func (b *Bencoder) extractInt() (*BenStruct, error) {
 	// current cursor is at `i`, so read till e
 	// we move one character and start reading
 
@@ -151,12 +151,12 @@ func (b *Bencoder) extractInt() *BenStruct {
 	// case of `0<any number>`
 	if len(value) > 1 && strings.HasPrefix(valueString, "0") {
 		logger.Error("integer cannot start with 0")
-		return nil
+		return nil, ErrInvalidInteger
 	}
 	// case of `-0` or `-0<anything>`
 	if len(value) > 1 && strings.HasPrefix(valueString, "-0") {
 		logger.Error("integer cannot have -0")
-		return nil
+		return nil, ErrInvalidInteger
 	}
 
 	// we have read till `e`, so move to next cursor
@@ -166,12 +166,12 @@ func (b *Bencoder) extractInt() *BenStruct {
 
 	if err != nil {
 		logger.WithError(err).Error("failed to parse the int")
-		return nil
+		return nil, ErrInvalidInteger
 	}
-	return &BenStruct{DataType: IntType, IntValue: intValue, JsonValue: jsonMustMarshal(&intValue), Raw: fmt.Sprintf("i%de", intValue)}
+	return &BenStruct{DataType: IntType, IntValue: intValue, JsonValue: jsonMustMarshal(&intValue), Raw: fmt.Sprintf("i%de", intValue)}, nil
 }
 
-func (b *Bencoder) extractList() *BenStruct {
+func (b *Bencoder) extractList() (*BenStruct, error) {
 	// current cursor is at `l`, so read till e
 	// we move one character and start reading
 
@@ -190,7 +190,10 @@ func (b *Bencoder) extractList() *BenStruct {
 			break
 		}
 
-		item := b.encode()
+		item, err := b.encode()
+		if err != nil {
+			return nil, err
+		}
 		result = append(result, *item)
 	}
 
@@ -208,10 +211,10 @@ func (b *Bencoder) extractList() *BenStruct {
 		log.WithField("method", "extractList").WithError(err).Error("failed to marshal the jsonlist")
 	}
 
-	return &BenStruct{DataType: ListType, ListValue: result, JsonValue: jsonValue, Raw: b.rawString[startCursor:endCursor]}
+	return &BenStruct{DataType: ListType, ListValue: result, JsonValue: jsonValue, Raw: b.rawString[startCursor:endCursor]}, nil
 }
 
-func (b *Bencoder) extractMap() *BenStruct {
+func (b *Bencoder) extractMap() (*BenStruct, error) {
 	// current cursor is at `d`, so read till e
 	// we move one character and start reading
 
@@ -233,8 +236,14 @@ func (b *Bencoder) extractMap() *BenStruct {
 			break
 		}
 
-		key := b.extractString()
-		value := b.encode()
+		key, err := b.extractString()
+		if err != nil {
+			return nil, err
+		}
+		value, err := b.encode()
+		if err != nil {
+			return nil, err
+		}
 		result[key.StringValue] = *value
 		jsonResult[key.StringValue] = value.JsonValue
 	}
@@ -248,5 +257,5 @@ func (b *Bencoder) extractMap() *BenStruct {
 		log.WithField("method", "extractMap").WithError(err).Error("failed to marshal the jsonmap")
 	}
 
-	return &BenStruct{DataType: MapType, MapValue: result, JsonValue: jsonValue, Raw: b.rawString[startCursor:endCursor]}
+	return &BenStruct{DataType: MapType, MapValue: result, JsonValue: jsonValue, Raw: b.rawString[startCursor:endCursor]}, nil
 }
