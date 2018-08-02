@@ -11,6 +11,21 @@ const (
 	MapType
 )
 
+func (d DataType) String() string {
+	switch d {
+	case StringType:
+		return "string"
+	case IntType:
+		return "int"
+	case ListType:
+		return "list"
+	case MapType:
+		return "map"
+	default:
+		return ""
+	}
+}
+
 type BenStruct struct {
 	DataType    DataType
 	IntValue    int
